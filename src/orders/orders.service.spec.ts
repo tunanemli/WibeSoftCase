@@ -71,6 +71,14 @@ describe('OrdersService', () => {
     createdAt: new Date(),
   };
 
+  const mockQueryBuilder = {
+    update: jest.fn().mockReturnThis(),
+    set: jest.fn().mockReturnThis(),
+    where: jest.fn().mockReturnThis(),
+    andWhere: jest.fn().mockReturnThis(),
+    execute: jest.fn().mockResolvedValue({ affected: 1 }),
+  };
+
   const mockQueryRunner: Partial<QueryRunner> = {
     connect: jest.fn().mockResolvedValue(undefined),
     startTransaction: jest.fn().mockResolvedValue(undefined),
@@ -80,6 +88,8 @@ describe('OrdersService', () => {
     manager: {
       create: jest.fn(),
       save: jest.fn(),
+      findOne: jest.fn().mockResolvedValue(mockProduct),
+      createQueryBuilder: jest.fn().mockReturnValue(mockQueryBuilder),
     } as any,
   };
 
@@ -168,7 +178,9 @@ describe('OrdersService', () => {
       (mockQueryRunner.manager.save as jest.Mock)
         .mockResolvedValueOnce(savedOrder)
         .mockResolvedValueOnce([mockOrderItem]);
-      mockProductsService.decreaseStock.mockResolvedValue(undefined);
+      (mockQueryRunner.manager.findOne as jest.Mock).mockResolvedValue(
+        mockProduct,
+      );
       mockCartService.clearCart.mockResolvedValue(undefined);
       mockOrderRepository.findOne.mockResolvedValue(orderWithItems);
 
@@ -177,11 +189,10 @@ describe('OrdersService', () => {
       expect(mockCartService.getCart).toHaveBeenCalledWith(sessionId);
       expect(mockQueryRunner.connect).toHaveBeenCalled();
       expect(mockQueryRunner.startTransaction).toHaveBeenCalled();
+      expect(mockQueryRunner.manager.findOne).toHaveBeenCalledWith(Product, {
+        where: { id: mockCartItem.productId },
+      });
       expect(mockQueryRunner.commitTransaction).toHaveBeenCalled();
-      expect(mockProductsService.decreaseStock).toHaveBeenCalledWith(
-        mockCartItem.productId,
-        mockCartItem.quantity,
-      );
       expect(mockCartService.clearCart).toHaveBeenCalledWith(sessionId);
       expect(result).toEqual(orderWithItems);
     });

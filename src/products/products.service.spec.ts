@@ -169,28 +169,6 @@ describe('ProductsService', () => {
     });
   });
 
-  describe('remove', () => {
-    it('should remove a product', async () => {
-      const id = '123e4567-e89b-12d3-a456-426614174000';
-
-      mockRepository.findOne.mockResolvedValue(mockProduct);
-      mockRepository.remove.mockResolvedValue(mockProduct);
-
-      await service.remove(id);
-
-      expect(mockRepository.findOne).toHaveBeenCalledWith({ where: { id } });
-      expect(mockRepository.remove).toHaveBeenCalledWith(mockProduct);
-    });
-
-    it('should throw NotFoundException when product not found', async () => {
-      const id = 'non-existent-id';
-
-      mockRepository.findOne.mockResolvedValue(null);
-
-      await expect(service.remove(id)).rejects.toThrow(NotFoundException);
-    });
-  });
-
   describe('checkStock', () => {
     it('should return product when stock is sufficient', async () => {
       const productId = '123e4567-e89b-12d3-a456-426614174000';

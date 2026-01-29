@@ -1,0 +1,67 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: wibeSoft-ecommerce-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: wibesoft_ecommerce
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - ecommerce-network
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: wibeSoft-ecommerce-api
+    environment:
+      NODE_ENV: production
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+      DB_DATABASE: wibesoft_ecommerce
+      DB_SYNCHRONIZE: 'true'
+      JWT_SECRET: wibesoftcaseproject
+      JWT_EXPIRES_IN: 24h
+      PORT: 3000
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - ecommerce-network
+    restart: unless-stopped
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: wibeSoft-ecommerce-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@wibesoft.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    ports:
+      - "5050:80"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - ecommerce-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+
+networks:
+  ecommerce-network:
+    driver: bridge
